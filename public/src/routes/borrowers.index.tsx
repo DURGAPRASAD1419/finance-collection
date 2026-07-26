@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppShell, EmptyState, Fab } from "@/components/app-shell";
 import { fromDMY, inr, loanTotals, useApp } from "@/lib/app-store";
@@ -21,8 +21,9 @@ export const Route = createFileRoute("/borrowers/")({
 
 function BorrowersPage() {
   const navigate = useNavigate();
-  const { borrowers, loans } = useApp();
+  const { borrowers, loans, deleteBorrower, notifyError } = useApp();
   const [query, setQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const value = query.trim().toLowerCase();
@@ -35,6 +36,19 @@ function BorrowersPage() {
         (b.address ?? "").toLowerCase().includes(value),
     );
   }, [borrowers, query]);
+
+  async function handleDeleteBorrower(id: string, name: string) {
+    if (!window.confirm(`Delete borrower ${name}?`)) return;
+    setDeletingId(id);
+    try {
+      await deleteBorrower(id);
+    } catch (error) {
+      console.error(error);
+      notifyError("Unable to delete borrower. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <AppShell title="Borrowers" searchQuery={query} onSearchChange={setQuery} headerLeft={<button onClick={() => navigate({ to: "/dashboard" })} className="rounded-md p-2 text-brand transition hover:bg-slate-100"><ArrowLeft className="size-6" /></button>}>
@@ -150,7 +164,16 @@ function BorrowersPage() {
                     <p className="mt-1 text-lg font-bold text-foreground">{inr(totalBalance)}</p>
                   </div>
                 </div>
-                <div className="flex justify-end">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteBorrower(b.id, b.name)}
+                    disabled={deletingId === b.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive transition hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Trash2 className="size-4" />
+                    {deletingId === b.id ? "Deleting..." : "Delete"}
+                  </button>
                   <Link
                     to="/borrowers/$borrowerId"
                     params={{ borrowerId: b.id }}

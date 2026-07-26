@@ -176,6 +176,18 @@ app.put("/api/borrowers/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/borrowers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await dbRun("DELETE FROM dues WHERE loanId IN (SELECT id FROM loans WHERE borrowerId = ?)", id);
+    await dbRun("DELETE FROM loans WHERE borrowerId = ?", id);
+    await dbRun("DELETE FROM borrowers WHERE id = ?", id);
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/api/loans", async (req, res) => {
   try {
     const loans = await dbAll("SELECT * FROM loans ORDER BY startDate DESC");
@@ -225,6 +237,17 @@ app.post("/api/loans", async (req, res) => {
     }
 
     res.json(loan);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/loans/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await dbRun("DELETE FROM dues WHERE loanId = ?", id);
+    await dbRun("DELETE FROM loans WHERE id = ?", id);
+    res.status(204).end();
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

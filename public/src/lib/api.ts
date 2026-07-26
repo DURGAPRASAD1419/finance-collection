@@ -111,6 +111,12 @@ export async function updateBorrower(id: string, borrower: Omit<Borrower, "id">)
   });
 }
 
+export async function deleteBorrower(id: string): Promise<void> {
+  return fetchWithRetry<void>(`${API_BASE}/api/borrowers/${id}`, {
+    method: "DELETE",
+  });
+}
+
 // Loan API
 export interface Due {
   no: number;
@@ -144,6 +150,12 @@ export async function createLoan(loan: Omit<Loan, "id">): Promise<Loan> {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(loan),
+  });
+}
+
+export async function deleteLoan(id: string): Promise<void> {
+  return fetchWithRetry<void>(`${API_BASE}/api/loans/${id}`, {
+    method: "DELETE",
   });
 }
 
