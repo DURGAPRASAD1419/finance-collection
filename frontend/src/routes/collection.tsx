@@ -22,19 +22,32 @@ export const Route = createFileRoute("/collection")({
 
 function CollectionPage() {
   const navigate = useNavigate();
-  const { loans, borrowers } = useApp();
+  const { loans, borrowers, deleteLoan } = useApp();
   const [freq, setFreq] = useState<Frequency>("daily");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const today = toDMY(new Date());
 
   const rows = loans
     .filter((l) => l.frequency === freq)
-    .flatMap((l) =>
-      l.dues
+    .flatMap((l) => {
+      const nextDue = l.dues
         .filter((d) => !d.paid && fromDMY(d.date) <= fromDMY(today))
-        .map((d) => ({ loan: l, due: d })),
-    );
+        .sort((a, b) => fromDMY(a.date).getTime() - fromDMY(b.date).getTime())[0];
+
+      return nextDue ? [{ loan: l, due: nextDue }] : [];
+    });
 
   const totalDue = rows.reduce((s, r) => s + r.due.amount, 0);
+
+  async function handleDeleteLoan(id: string, code: string) {
+    if (!window.confirm(`Delete loan ${code}?`)) return;
+    setDeletingId(id);
+    try {
+      await deleteLoan(id);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <AppShell title="Collection" headerLeft={<button onClick={() => navigate({ to: "/dashboard" })} className="rounded-md p-2 text-brand transition hover:bg-slate-100"><ArrowLeft className="size-6" /></button>}>
@@ -57,9 +70,19 @@ function CollectionPage() {
                   {loan.code} · Due {due.no} · {due.date}
                 </p>
               </div>
-              <span className="rounded-md bg-primary px-3 py-2 text-base font-bold text-primary-foreground">
-                {inr(due.amount)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-primary px-3 py-2 text-base font-bold text-primary-foreground">
+                  {inr(due.amount)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteLoan(loan.id, loan.code)}
+                  disabled={deletingId === loan.id}
+                  className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {deletingId === loan.id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
             </li>
           ))}
         </ul>

@@ -1,6 +1,13 @@
 # LoanBook Backend
 
-This backend serves the LoanBook frontend with a SQLite database.
+This backend serves the LoanBook frontend with a cloud MongoDB database.
+
+## Environment variables
+
+Set these before starting the server:
+
+- `MONGODB_URI` or `MONGODB_URL` for a full connection string
+- `DATABASE_URL` as an alternative connection string
 
 ## Default credentials
 

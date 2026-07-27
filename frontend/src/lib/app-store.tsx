@@ -63,6 +63,7 @@ interface AppStore extends AppState {
   addBorrower: (b: Omit<Borrower, "id">) => Promise<Borrower>;
   updateBorrower: (id: string, changes: Partial<Omit<Borrower, "id">>) => Promise<Borrower>;
   deleteBorrower: (id: string) => Promise<void>;
+  deleteLoan: (id: string) => Promise<void>;
   addLoan: (l: Omit<Loan, "id" | "code" | "dues">) => Promise<Loan>;
   payDue: (loanId: string, dueNo: number, paidDate: string, collectedBy: string) => Promise<void>;
   borrowerOf: (loan: Loan) => Borrower | undefined;
@@ -249,6 +250,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [notifyError, notifySuccess]);
 
+  const deleteLoan = useCallback(async (id: string) => {
+    try {
+      await apiClient.deleteLoan(id);
+      setState((s) => ({
+        ...s,
+        loans: s.loans.filter((loan) => loan.id !== id),
+      }));
+      notifySuccess("Loan deleted successfully.");
+    } catch (error) {
+      const message = error instanceof apiClient.ApiError
+        ? `Failed to delete loan: ${error.message}`
+        : "Unable to delete loan. Please check your connection and try again.";
+      notifyError(message);
+      throw error;
+    }
+  }, [notifyError, notifySuccess]);
+
   const addLoan = useCallback(
     async (l: Omit<Loan, "id" | "code" | "dues">) => {
       const prefix = l.frequency === "daily" ? "DL" : l.frequency === "weekly" ? "WL" : "ML";
@@ -365,6 +383,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addBorrower,
       updateBorrower,
       deleteBorrower,
+      deleteLoan,
       addLoan,
       payDue,
       borrowerOf: (loan) => state.borrowers.find((b) => b.id === loan.borrowerId),
@@ -376,7 +395,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       backupDatabase,
       importDatabase,
     }),
-    [state, login, logout, addBorrower, updateBorrower, deleteBorrower, addLoan, payDue, notifySuccess, notifyError, removeToast, toasts, exportDatabase, backupDatabase, importDatabase],
+    [state, login, logout, addBorrower, updateBorrower, deleteBorrower, deleteLoan, addLoan, payDue, notifySuccess, notifyError, removeToast, toasts, exportDatabase, backupDatabase, importDatabase],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
