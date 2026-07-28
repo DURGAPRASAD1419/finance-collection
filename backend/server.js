@@ -14,21 +14,35 @@ const dataDir = path.join(__dirname, "data");
 
 fs.mkdirSync(dataDir, { recursive: true });
 
-const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL || process.env.DATABASE_URL || "mongodb://127.0.0.1:27017/loanbook";
-const client = new MongoClient(mongoUri);
-let database;
-try {
-  const parsed = new URL(mongoUri);
-  console.log("Using Mongo host:", parsed.hostname);
-} catch (e) {
-  console.log("Using Mongo URI (masked)");
+// Use only the explicit MongoDB URI provided via `MONGODB_URI` in the environment.
+const mongoUri = process.env.MONGODB_URI;
+if (!mongoUri) {
+  console.error("MONGODB_URI is not set. Set it in .env and restart the server.");
+  process.exit(1);
 }
+
+const client = new MongoClient(mongoUri);
+let database = null;
+
 async function getDatabase() {
   if (!database) {
-    await client.connect();
-    const parsedUrl = new URL(mongoUri);
-    const dbName = parsedUrl.pathname.replace(/^\//, "") || "loanbook";
-    database = client.db(dbName);
+    try {
+      await client.connect();
+    } catch (err) {
+      console.error("Failed to connect to MongoDB using MONGODB_URI:", err.message || err);
+      throw err;
+    }
+
+    try {
+      const parsedUrl = new URL(mongoUri);
+      const dbName = parsedUrl.pathname.replace(/^\//, "") || "";
+      database = dbName ? client.db(dbName) : client.db();
+    } catch (e) {
+      // If parsing fails, fall back to default database selection by the driver
+      database = client.db();
+    }
+
+    console.log("Connected to Mongo host:", (() => { try { return new URL(mongoUri).hostname } catch { return 'unknown' } })());
   }
 
   return database;
