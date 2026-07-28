@@ -7,7 +7,7 @@ const DEFAULT_API_BASE = typeof window !== "undefined" && window.location.hostna
   ? "http://10.0.2.2:4000"
   : "http://localhost:4000";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE;
+export const API_BASE = import.meta.env.VITE_API_URL || DEFAULT_API_BASE;
 
 export interface ApiResponse<T> {
   success: boolean;

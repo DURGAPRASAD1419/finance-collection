@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Lock, User } from "lucide-react";
 import { useApp } from "@/lib/app-store";
 import { Field } from "@/components/app-shell";
+import { API_BASE } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,7 +45,7 @@ function LoginPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:4000/api/auth/login", {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ username, password }),
