@@ -17,7 +17,12 @@ fs.mkdirSync(dataDir, { recursive: true });
 const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL || process.env.DATABASE_URL || "mongodb://127.0.0.1:27017/loanbook";
 const client = new MongoClient(mongoUri);
 let database;
-
+try {
+  const parsed = new URL(mongoUri);
+  console.log("Using Mongo host:", parsed.hostname);
+} catch (e) {
+  console.log("Using Mongo URI (masked)");
+}
 async function getDatabase() {
   if (!database) {
     await client.connect();
