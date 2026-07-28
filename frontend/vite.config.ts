@@ -15,4 +15,10 @@ export default defineConfig({
   nitro: {
     preset: "node",
   },
+  // Expose Vite dev server on all network interfaces so it is reachable from other machines
+  vite: {
+    server: {
+      host: true,
+    },
+  },
 });
